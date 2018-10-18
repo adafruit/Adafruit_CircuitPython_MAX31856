@@ -43,7 +43,7 @@ Usage Example
   cs.direction = digitalio.Direction.OUTPUT
 
   # create a thermocouple object with the above
-  thermocouple = adafruit_max31856.MAX31856(spi,cs)
+  thermocouple = adafruit_max31856.MAX31856(spi, cs)
 
   # print the temperature!
   print(thermocouple.temperature)
