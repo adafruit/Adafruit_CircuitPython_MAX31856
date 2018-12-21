@@ -9,8 +9,8 @@ Introduction
     :target: https://discord.gg/nBQh6qu
     :alt: Discord
 
-.. image:: https://travis-ci.org/adafruit/Adafruit_CircuitPython_MAX31856.svg?branch=master
-    :target: https://travis-ci.org/adafruit/Adafruit_CircuitPython_MAX31856
+.. image:: https://travis-ci.com/adafruit/Adafruit_CircuitPython_MAX31856.svg?branch=master
+    :target: https://travis-ci.com/adafruit/Adafruit_CircuitPython_MAX31856
     :alt: Build Status
 
 A CircuitPython driver for the MAX31856 Universal Thermocouple Amplifier
