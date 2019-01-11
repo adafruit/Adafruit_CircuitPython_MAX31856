@@ -132,7 +132,7 @@ class MAX31856:
 
     # A class level buffer to reduce allocations for reading and writing.
     # Tony says this isn't re-entrant or thread safe!
-    _BUFFER = bytearray(3)
+    _BUFFER = bytearray(4)
 
     def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K):
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
