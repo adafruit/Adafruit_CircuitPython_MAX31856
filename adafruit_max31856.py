@@ -156,7 +156,7 @@ class MAX31856:
         self._perform_one_shot_measurement()
 
         # unpack the 3-byte temperature as 4 bytes
-        raw_temp = unpack(">i", self._read_register(_MAX31856_LTCBH_REG, 3))[0]
+        raw_temp = unpack(">i", self._read_register(_MAX31856_LTCBH_REG, 3)+bytes([0]))[0]
 
         # shift to remove extra byte from unpack needing 4 bytes
         raw_temp >>= 8
@@ -271,7 +271,7 @@ class MAX31856:
             self._BUFFER[0] = address & 0x7F
             device.write(self._BUFFER, end=1)
             device.readinto(self._BUFFER, end=length)
-        return self._BUFFER
+        return self._BUFFER[:length]
 
     def _write_u8(self, address, val):
         # Write an 8-bit unsigned value to the specified 8-bit address.
