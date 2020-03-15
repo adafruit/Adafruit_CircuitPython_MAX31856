@@ -47,6 +47,7 @@ Implementation Notes
 from time import sleep
 from micropython import const
 from adafruit_bus_device.spi_device import SPIDevice
+
 try:
     from struct import unpack
 except ImportError:
@@ -92,7 +93,7 @@ _MAX31856_FAULT_OVUV = const(0x02)
 _MAX31856_FAULT_OPEN = const(0x01)
 
 
-class ThermocoupleType: # pylint: disable=too-few-public-methods
+class ThermocoupleType:  # pylint: disable=too-few-public-methods
     """An enum-like class representing the different types of thermocouples that the MAX31856 can
     use. The values can be referenced like ``ThermocoupleType.K`` or ``ThermocoupleType.S``
     Possible values are
@@ -107,6 +108,7 @@ class ThermocoupleType: # pylint: disable=too-few-public-methods
     - ``ThermocoupleType.T``
 
     """
+
     # pylint: disable=invalid-name
     B = 0b0000
     E = 0b0001
@@ -156,13 +158,15 @@ class MAX31856:
         self._perform_one_shot_measurement()
 
         # unpack the 3-byte temperature as 4 bytes
-        raw_temp = unpack(">i", self._read_register(_MAX31856_LTCBH_REG, 3)+bytes([0]))[0]
+        raw_temp = unpack(
+            ">i", self._read_register(_MAX31856_LTCBH_REG, 3) + bytes([0])
+        )[0]
 
         # shift to remove extra byte from unpack needing 4 bytes
         raw_temp >>= 8
 
         # effectively shift raw_read >> 12 to convert pseudo-float
-        temp_float = (raw_temp / 4096.0)
+        temp_float = raw_temp / 4096.0
 
         return temp_float
 
@@ -202,16 +206,17 @@ class MAX31856:
         self._write_u8(_MAX31856_LTLFTL_REG, int_low)
 
     @property
-    def reference_temperature_thresholds(self): # pylint: disable=invalid-name
+    def reference_temperature_thresholds(self):  # pylint: disable=invalid-name
         """The cold junction's low and high temperature thresholds
         as a ``(low_temp, high_temp)`` tuple
         """
-        return (float(unpack("b", self._read_register(_MAX31856_CJLF_REG, 1))[0]),
-                float(unpack("b", self._read_register(_MAX31856_CJHF_REG, 1))[0]))
-
+        return (
+            float(unpack("b", self._read_register(_MAX31856_CJLF_REG, 1))[0]),
+            float(unpack("b", self._read_register(_MAX31856_CJHF_REG, 1))[0]),
+        )
 
     @reference_temperature_thresholds.setter
-    def reference_temperature_thresholds(self, val): # pylint: disable=invalid-name
+    def reference_temperature_thresholds(self, val):  # pylint: disable=invalid-name
 
         self._write_u8(_MAX31856_CJLF_REG, int(val[0]))
         self._write_u8(_MAX31856_CJHF_REG, int(val[1]))
@@ -245,7 +250,7 @@ class MAX31856:
             "tc_high": bool(faults & _MAX31856_FAULT_TCHIGH),
             "tc_low": bool(faults & _MAX31856_FAULT_TCLOW),
             "voltage": bool(faults & _MAX31856_FAULT_OVUV),
-            "open_tc": bool(faults & _MAX31856_FAULT_OPEN)
+            "open_tc": bool(faults & _MAX31856_FAULT_OPEN),
         }
 
     def _perform_one_shot_measurement(self):
@@ -278,4 +283,4 @@ class MAX31856:
         with self._device as device:
             self._BUFFER[0] = (address | 0x80) & 0xFF
             self._BUFFER[1] = val & 0xFF
-            device.write(self._BUFFER, end=2) # pylint: disable=no-member
+            device.write(self._BUFFER, end=2)  # pylint: disable=no-member
