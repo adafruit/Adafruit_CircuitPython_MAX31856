@@ -3,6 +3,7 @@ import board
 import busio
 import digitalio
 import adafruit_max31856
+
 # create a spi object
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
@@ -24,19 +25,32 @@ while True:
     current_temp_thresholds = thermocouple.temperature_thresholds
     current_cj_thresholds = thermocouple.reference_temperature_thresholds
     current_faults = thermocouple.fault
-    print("Temps:    %.2f :: cj: %.2f"%(thermocouple.temperature,
-                                        thermocouple.reference_temperature))
+    print(
+        "Temps:    %.2f :: cj: %.2f"
+        % (thermocouple.temperature, thermocouple.reference_temperature)
+    )
     print("Thresholds:")
-    print("Temp low: %.2f high: %.2f"%current_temp_thresholds)
-    print("CJ low:   %.2f high: %.2f"%current_cj_thresholds)
+    print("Temp low: %.2f high: %.2f" % current_temp_thresholds)
+    print("CJ low:   %.2f high: %.2f" % current_cj_thresholds)
     print("")
     print("Faults:")
-    print("Temp Hi:    %s | CJ Hi:    %s"%(current_faults['tc_high'], current_faults['cj_high']))
-    print("Temp Low:   %s | CJ Low:   %s"%(current_faults['tc_low'], current_faults['cj_low']))
-    print("Temp Range: %s | CJ Range: %s"%(current_faults['tc_range'], current_faults['cj_range']))
+    print(
+        "Temp Hi:    %s | CJ Hi:    %s"
+        % (current_faults["tc_high"], current_faults["cj_high"])
+    )
+    print(
+        "Temp Low:   %s | CJ Low:   %s"
+        % (current_faults["tc_low"], current_faults["cj_low"])
+    )
+    print(
+        "Temp Range: %s | CJ Range: %s"
+        % (current_faults["tc_range"], current_faults["cj_range"])
+    )
     print("")
-    print("Open Circuit: %s Voltage Over/Under: %s"%(current_faults['open_tc'],
-                                                     current_faults['voltage']))
+    print(
+        "Open Circuit: %s Voltage Over/Under: %s"
+        % (current_faults["open_tc"], current_faults["voltage"])
+    )
     print("")
 
     time.sleep(1.0)
