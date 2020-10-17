@@ -7,7 +7,7 @@ import adafruit_max31856
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
 # allocate a CS pin and set the direction
-cs = digitalio.DigitalInOut(board.D0)
+cs = digitalio.DigitalInOut(board.D5)
 cs.direction = digitalio.Direction.OUTPUT
 
 # create a thermocouple object with the above
