@@ -22,9 +22,10 @@ Implementation Notes
 **Software and Dependencies:**
 
 * Adafruit CircuitPython firmware for the supported boards:
-  https://github.com/adafruit/circuitpython/releases
+  https://circuitpython.org/downloads
 
 * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
+
 """
 
 from time import sleep
@@ -108,10 +109,36 @@ class ThermocoupleType:  # pylint: disable=too-few-public-methods
 class MAX31856:
     """Driver for the MAX31856 Universal Thermocouple Amplifier
 
-      :param ~busio.SPI spi_bus: The SPI bus the MAX31856 is connected to.
-      :param ~microcontroller.Pin cs: The pin used for the CS signal.
-      :param ~adafruit_max31856.ThermocoupleType thermocouple_type: The type of thermocouple.\
+    :param ~busio.SPI spi: The SPI bus the MAX31856 is connected to.
+    :param ~microcontroller.Pin cs: The pin used for the CS signal.
+    :param ~adafruit_max31856.ThermocoupleType thermocouple_type: The type of thermocouple.\
       Default is Type K.
+
+    **Quickstart: Importing and using the MAX31856**
+
+        Here is an example of using the :class:`MAX31856` class.
+        First you will need to import the libraries to use the sensor
+
+        .. code-block:: python
+
+            import board
+            from digitalio import DigitalInOut, Direction
+            import adafruit_max31856
+
+        Once this is done you can define your `board.SPI` object and define your sensor object
+
+        .. code-block:: python
+
+            spi = board.SPI()
+            cs = digitalio.DigitalInOut(board.D5)  # Chip select of the MAX31856 board.
+            sensor = adafruit_max31856.MAX31856(spi, cs)
+
+
+        Now you have access to the :attr:`temperature` attribute
+
+        .. code-block:: python
+
+            temperature = sensor.temperature
 
     """
 
@@ -137,7 +164,7 @@ class MAX31856:
 
     @property
     def temperature(self):
-        """The temperature of the sensor and return its value in degrees celsius. (read-only)"""
+        """The temperature of the sensor and return its value in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
 
         # unpack the 3-byte temperature as 4 bytes
@@ -155,7 +182,7 @@ class MAX31856:
 
     @property
     def reference_temperature(self):
-        """The temperature of the cold junction in degrees celsius. (read-only)"""
+        """The temperature of the cold junction in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
 
         raw_read = unpack(">h", self._read_register(_MAX31856_CJTH_REG, 2))[0]

@@ -23,8 +23,12 @@ Table of Contents
 .. toctree::
     :caption: Tutorials
 
+    Adafruit Universal Thermocouple Amplifier MAX31856 Breakout Learning Guide <https://learn.adafruit.com/adafruit-max31856-thermocouple-amplifier>
+
 .. toctree::
     :caption: Related Products
+
+    Adafruit Universal Thermocouple Amplifier MAX31856 Breakout <https://www.adafruit.com/product/3263>
 
 .. toctree::
     :caption: Other Links
