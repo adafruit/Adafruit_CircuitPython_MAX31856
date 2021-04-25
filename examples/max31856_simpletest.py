@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 import board
-import busio
 import digitalio
 import adafruit_max31856
 
-# create a spi object
-spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+# Create sensor object, communicating over the board's default SPI bus
+spi = board.SPI()
 
 # allocate a CS pin and set the direction
 cs = digitalio.DigitalInOut(board.D5)
