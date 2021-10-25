@@ -74,6 +74,11 @@ Usage Example
       print(thermocouple.temperature)
 
 
+Documentation
+=============
+
+API documentation for this library can be found on `Read the Docs <https://circuitpython.readthedocs.io/projects/max31856/en/latest/>`_.
+
 Contributing
 ============
 
