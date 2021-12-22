@@ -28,14 +28,10 @@ Implementation Notes
 
 """
 
+from struct import unpack
 from time import sleep
 from micropython import const
 from adafruit_bus_device.spi_device import SPIDevice
-
-try:
-    from struct import unpack
-except ImportError:
-    from ustruct import unpack
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_MAX31856.git"
