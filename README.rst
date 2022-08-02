@@ -70,9 +70,16 @@ Usage Example
       # create a thermocouple object with the above
       thermocouple = adafruit_max31856.MAX31856(spi, cs)
 
-      # print the temperature!
+      # measure the temperature! (takes approx 160ms)
       print(thermocouple.temperature)
 
+      # alternative (non-blocking) way to get temperature
+      thermocouple.initiate_one_shot_measurement()
+      # <perform other tasks>
+      # now wait for measurement to complete
+      while thermocouple.oneshot_pending:
+        pass
+      print(thermocouple.unpack_temperature())
 
 Documentation
 =============
