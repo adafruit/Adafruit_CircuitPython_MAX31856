@@ -77,13 +77,8 @@ _MAX31856_FAULT_TCLOW = const(0x04)
 _MAX31856_FAULT_OVUV = const(0x02)
 _MAX31856_FAULT_OPEN = const(0x01)
 
-_AVGSEL_CONSTS = {
-    1: 0x00,
-    2: 0x10,
-    4: 0x20,
-    8: 0x30,
-    16: 0x40
-    }
+_AVGSEL_CONSTS = {1: 0x00, 2: 0x10, 4: 0x20, 8: 0x30, 16: 0x40}
+
 
 class ThermocoupleType:  # pylint: disable=too-few-public-methods
     """An enum-like class representing the different types of thermocouples that the MAX31856 can
@@ -156,9 +151,14 @@ class MAX31856:
     # Tony says this isn't re-entrant or thread safe!
     _BUFFER = bytearray(4)
 
-    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K, 
-                sampling=1,
-                filter_50hz=False):
+    def __init__(
+        self,
+        spi,
+        cs,
+        thermocouple_type=ThermocoupleType.K,
+        sampling=1,
+        filter_50hz=False,
+    ):
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
 
         # assert on any fault
@@ -173,7 +173,7 @@ class MAX31856:
 
         # set number of samples
         if sampling not in _AVGSEL_CONSTS:
-            raise ValueError('Sampling must be one of 1,2,4,8,16')
+            raise ValueError("Sampling must be one of 1,2,4,8,16")
         else:
             avgsel = _AVGSEL_CONSTS[sampling]
 
@@ -191,7 +191,7 @@ class MAX31856:
         return self.unpack_temperature()
 
     def unpack_temperature(self) -> float:
-        '''Reads the probe temperature from the register'''
+        """Reads the probe temperature from the register"""
         # unpack the 3-byte temperature as 4 bytes
         raw_temp = unpack(
             ">i", self._read_register(_MAX31856_LTCBH_REG, 3) + bytes([0])
@@ -205,8 +205,6 @@ class MAX31856:
 
         return temp_float
 
-
-
     @property
     def reference_temperature(self):
         """Wait to retreive temperature of the cold junction in degrees Celsius. (read-only)"""
@@ -214,7 +212,7 @@ class MAX31856:
         return self.unpack_reference_temperature()
 
     def unpack_reference_temperature(self) -> float:
-        '''Reads the reference temperature from the register'''
+        """Reads the reference temperature from the register"""
         raw_read = unpack(">h", self._read_register(_MAX31856_CJTH_REG, 2))[0]
 
         # effectively shift raw_read >> 8 to convert pseudo-float
@@ -298,13 +296,12 @@ class MAX31856:
         # wait for the measurement to complete
         self._wait_for_oneshot()
 
-
     def initiate_one_shot_measurement(self):
-        '''Starts a one-shot measurement and returns immediately.
+        """Starts a one-shot measurement and returns immediately.
         A measurement takes approximately 160ms.
         Check the status of the measurement with `oneshot_pending`; when it is false,
         the measurement is complete and the value can be read with `unpack_temperature`.
-        '''
+        """
         # read the current value of the first config register
         conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
 
@@ -316,19 +313,19 @@ class MAX31856:
         # write it back with the new values, prompting the sensor to perform a measurement
         self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
 
-
     @property
     def oneshot_pending(self) -> bool:
-        '''A boolean indicating the status of the one-shot flag.
-            A True value means the measurement is still ongoing.
-            A False value means measurement is complete.'''
-        oneshot_flag = self._read_register(_MAX31856_CR0_REG, 1)[0] & _MAX31856_CR0_1SHOT
+        """A boolean indicating the status of the one-shot flag.
+        A True value means the measurement is still ongoing.
+        A False value means measurement is complete."""
+        oneshot_flag = (
+            self._read_register(_MAX31856_CR0_REG, 1)[0] & _MAX31856_CR0_1SHOT
+        )
         return bool(oneshot_flag)
 
     def _wait_for_oneshot(self):
         while self.oneshot_pending:
             sleep(0.01)
-
 
     def _read_register(self, address, length):
         # pylint: disable=no-member
