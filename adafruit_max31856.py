@@ -49,6 +49,7 @@ _MAX31856_CR0_OCFAULT0 = const(0x10)
 _MAX31856_CR0_CJ = const(0x08)
 _MAX31856_CR0_FAULT = const(0x04)
 _MAX31856_CR0_FAULTCLR = const(0x02)
+_MAX31856_CR0_50HZ = const(0x01)
 
 _MAX31856_CR1_REG = const(0x01)
 _MAX31856_MASK_REG = const(0x02)
@@ -121,6 +122,7 @@ class MAX31856:
     :param ~adafruit_max31856.ThermocoupleType thermocouple_type: The type of thermocouple.\
       Default is Type K.
     :param ~int sampling: Number of samples to be averaged [1,2,4,8,16]
+    :param ~bool filter_50hz: Filter 50Hz mains frequency instead of 60Hz
 
     **Quickstart: Importing and using the MAX31856**
 
@@ -154,13 +156,20 @@ class MAX31856:
     # Tony says this isn't re-entrant or thread safe!
     _BUFFER = bytearray(4)
 
-    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K, sampling=1):
+    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K, 
+                sampling=1,
+                filter_50hz=False):
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
 
         # assert on any fault
         self._write_u8(_MAX31856_MASK_REG, 0x0)
         # configure open circuit faults
-        self._write_u8(_MAX31856_CR0_REG, _MAX31856_CR0_OCFAULT0)
+        cr0_reg = _MAX31856_CR0_OCFAULT0
+        # configure mains filtering: 60Hz (default) or 50Hz
+        if filter_50hz:
+            cr0_reg |= _MAX31856_CR0_50HZ
+
+        self._write_u8(_MAX31856_CR0_REG, cr0_reg)
 
         # set number of samples
         if sampling not in _AVGSEL_CONSTS:
