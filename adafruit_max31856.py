@@ -164,7 +164,8 @@ class MAX31856:
 
     @property
     def temperature(self):
-        """Measure the temperature of the sensor and wait to retrieve its value in degrees Celsius. (read-only)"""
+        """Measure the temperature of the sensor and wait for the result.
+        Return value is in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
         return self.unpack_temperature()
 
@@ -279,7 +280,7 @@ class MAX31856:
 
     def initiate_one_shot_measurement(self):
         '''Starts a one-shot measurement and returns immediately.
-        A measurement takes approximately 160ms. 
+        A measurement takes approximately 160ms.
         Check the status of the measurement with `oneshot_pending`; when it is false,
         the measurement is complete and the value can be read with `unpack_temperature`.
         '''
@@ -297,8 +298,9 @@ class MAX31856:
 
     @property
     def oneshot_pending(self) -> bool:
-        '''A boolean indicating the status of the one-shot flag. 
-            A True value means the measurement is still ongoing. A False value means measurement is complete.'''
+        '''A boolean indicating the status of the one-shot flag.
+            A True value means the measurement is still ongoing.
+            A False value means measurement is complete.'''
         oneshot_flag = self._read_register(_MAX31856_CR0_REG, 1)[0] & _MAX31856_CR0_1SHOT
         return bool(oneshot_flag)
 
