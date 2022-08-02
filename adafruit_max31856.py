@@ -76,6 +76,13 @@ _MAX31856_FAULT_TCLOW = const(0x04)
 _MAX31856_FAULT_OVUV = const(0x02)
 _MAX31856_FAULT_OPEN = const(0x01)
 
+_AVGSEL_CONSTS = {
+    1: 0x00,
+    2: 0x10,
+    4: 0x20,
+    8: 0x30,
+    16: 0x40
+    }
 
 class ThermocoupleType:  # pylint: disable=too-few-public-methods
     """An enum-like class representing the different types of thermocouples that the MAX31856 can
@@ -113,6 +120,7 @@ class MAX31856:
     :param ~microcontroller.Pin cs: The pin used for the CS signal.
     :param ~adafruit_max31856.ThermocoupleType thermocouple_type: The type of thermocouple.\
       Default is Type K.
+    :param ~int sampling: Number of samples to be averaged [1,2,4,8,16]
 
     **Quickstart: Importing and using the MAX31856**
 
@@ -146,7 +154,7 @@ class MAX31856:
     # Tony says this isn't re-entrant or thread safe!
     _BUFFER = bytearray(4)
 
-    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K):
+    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K, sampling=1):
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
 
         # assert on any fault
@@ -154,12 +162,16 @@ class MAX31856:
         # configure open circuit faults
         self._write_u8(_MAX31856_CR0_REG, _MAX31856_CR0_OCFAULT0)
 
-        # set thermocouple type
-        # get current value of CR1 Reg
-        conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
-        conf_reg_1 &= 0xF0  # mask off bottom 4 bits
-        # add the new value for the TC type
-        conf_reg_1 |= int(thermocouple_type) & 0x0F
+        # set number of samples
+        if sampling not in _AVGSEL_CONSTS:
+            raise ValueError('Sampling must be one of 1,2,4,8,16')
+        else:
+            avgsel = _AVGSEL_CONSTS[sampling]
+
+        # set thermocouple type and averaging mode
+        # the CR1 reg is composed of AVGSEL + TCTYPE, so we set both at the same time
+        conf_reg_1 = avgsel + int(thermocouple_type)
+
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
 
     @property
