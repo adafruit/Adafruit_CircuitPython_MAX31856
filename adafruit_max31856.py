@@ -151,7 +151,7 @@ class MAX31856:
     # Tony says this isn't re-entrant or thread safe!
     _BUFFER = bytearray(4)
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,invalid-name
         self,
         spi,
         cs,
@@ -174,8 +174,7 @@ class MAX31856:
         # set number of samples
         if sampling not in _AVGSEL_CONSTS:
             raise ValueError("Sampling must be one of 1,2,4,8,16")
-        else:
-            avgsel = _AVGSEL_CONSTS[sampling]
+        avgsel = _AVGSEL_CONSTS[sampling]
 
         # set thermocouple type and averaging mode
         # the CR1 reg is composed of AVGSEL + TCTYPE, so we set both at the same time
