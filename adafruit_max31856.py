@@ -151,36 +151,57 @@ class MAX31856:
     # Tony says this isn't re-entrant or thread safe!
     _BUFFER = bytearray(4)
 
-    def __init__(  # pylint: disable=too-many-arguments,invalid-name
-        self,
-        spi,
-        cs,
-        thermocouple_type=ThermocoupleType.K,
-        sampling=1,
-        filter_50hz=False,
-    ):
+    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K):
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
 
         # assert on any fault
         self._write_u8(_MAX31856_MASK_REG, 0x0)
         # configure open circuit faults
-        cr0_reg = _MAX31856_CR0_OCFAULT0
-        # configure mains filtering: 60Hz (default) or 50Hz
-        if filter_50hz:
-            cr0_reg |= _MAX31856_CR0_50HZ
+        self._write_u8(_MAX31856_CR0_REG, _MAX31856_CR0_OCFAULT0)
 
-        self._write_u8(_MAX31856_CR0_REG, cr0_reg)
+        # set thermocouple type
+        self._set_thermocouple_type(thermocouple_type)
 
-        # set number of samples
-        if sampling not in _AVGSEL_CONSTS:
-            raise ValueError("Sampling must be one of 1,2,4,8,16")
-        avgsel = _AVGSEL_CONSTS[sampling]
-
-        # set thermocouple type and averaging mode
-        # the CR1 reg is composed of AVGSEL + TCTYPE, so we set both at the same time
-        conf_reg_1 = avgsel + int(thermocouple_type)
-
+    def _set_thermocouple_type(self, thermocouple_type: ThermocoupleType):
+        # get current value of CR1 Reg
+        conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
+        conf_reg_1 &= 0xF0  # mask off bottom 4 bits
+        # add the new value for the TC type
+        conf_reg_1 |= int(thermocouple_type) & 0x0F
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
+
+    def set_sampling(self, num_samples: int):
+        """
+        Sets the number of samples averaged by the sensor in each reading.
+        :param int num_samples: number of samples (1, 2, 4, 8 or 16).
+        """
+        # This option is set in bits 4-6 of register CR1.
+        if num_samples not in _AVGSEL_CONSTS:
+            raise ValueError("Num_samples must be one of 1,2,4,8,16")
+        avgsel = _AVGSEL_CONSTS[num_samples]
+        # get current value of CR1 Reg
+        conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
+        conf_reg_1 &= 0b10001111  # clear bits 4-6
+        # OR the AVGSEL bits (4-6)
+        conf_reg_1 |= avgsel
+        self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
+
+    def select_mains_filtering(self, frequency: int = 60):
+        """
+        Select mains filtering frequency (50/60Hz).
+        Note that filtering is always enabled, and set to 60Hz by default.
+        Use this function to instead filter 50Hz in 50Hz localities.
+        :param int frequency: mains frequency (must be either 50 or 60)"""
+        # this value is stored in bit 0 of register CR0.
+        # get current value of CR0 Reg
+        conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
+        if frequency == 50:
+            conf_reg_0 |= _MAX31856_CR0_50HZ  # set the 50hz bit
+        elif frequency == 60:
+            conf_reg_0 &= ~_MAX31856_CR0_50HZ  # clear the 50hz bit
+        else:
+            raise ValueError("Frequency must be 50 or 60")
+        self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
 
     @property
     def temperature(self):
