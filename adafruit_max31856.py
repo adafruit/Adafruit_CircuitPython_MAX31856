@@ -170,11 +170,21 @@ class MAX31856:
         conf_reg_1 |= int(thermocouple_type) & 0x0F
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
 
-    def set_sampling(self, num_samples: int):
+    @property
+    def averaging(self) -> int:
+        """Number of samples averaged together in each result.
+        Must be 1, 2, 4, 8, or 16. Default is 1 (no averaging).
         """
-        Sets the number of samples averaged by the sensor in each reading.
-        :param int num_samples: number of samples (1, 2, 4, 8 or 16).
-        """
+        conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
+        avgsel = conf_reg_1 & ~0b10001111  # clear bits other than 4-6
+        # check which byte this corresponds to
+        for key, value in _AVGSEL_CONSTS.items():
+            if value == avgsel:
+                return key
+        raise KeyError(f"AVGSEL bit pattern was not recognised ({avgsel:>08b})")
+
+    @averaging.setter
+    def averaging(self, num_samples: int):
         # This option is set in bits 4-6 of register CR1.
         if num_samples not in _AVGSEL_CONSTS:
             raise ValueError("Num_samples must be one of 1,2,4,8,16")
@@ -186,14 +196,19 @@ class MAX31856:
         conf_reg_1 |= avgsel
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
 
-    def select_mains_filtering(self, frequency: int = 60):
+    @property
+    def noise_rejection(self) -> int:
         """
-        Select mains filtering frequency (50/60Hz).
-        Note that filtering is always enabled, and set to 60Hz by default.
-        Use this function to instead filter 50Hz in 50Hz localities.
-        :param int frequency: mains frequency (must be either 50 or 60)"""
+        The frequency (Hz) to be used by the noise rejection filter.
+        Must be 50 or 60. Default is 60."""
         # this value is stored in bit 0 of register CR0.
-        # get current value of CR0 Reg
+        conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
+        if conf_reg_0 & _MAX31856_CR0_50HZ:
+            return 50
+        return 60
+
+    @noise_rejection.setter
+    def noise_rejection(self, frequency: int):
         conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
         if frequency == 50:
             conf_reg_0 |= _MAX31856_CR0_50HZ  # set the 50hz bit
