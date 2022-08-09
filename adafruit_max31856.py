@@ -242,7 +242,7 @@ class MAX31856:
 
     @property
     def reference_temperature(self):
-        """Wait to retreive temperature of the cold junction in degrees Celsius. (read-only)"""
+        """Wait to retrieve temperature of the cold junction in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
         return self.unpack_reference_temperature()
 
