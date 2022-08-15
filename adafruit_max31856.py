@@ -49,6 +49,7 @@ _MAX31856_CR0_OCFAULT0 = const(0x10)
 _MAX31856_CR0_CJ = const(0x08)
 _MAX31856_CR0_FAULT = const(0x04)
 _MAX31856_CR0_FAULTCLR = const(0x02)
+_MAX31856_CR0_50HZ = const(0x01)
 
 _MAX31856_CR1_REG = const(0x01)
 _MAX31856_MASK_REG = const(0x02)
@@ -75,6 +76,8 @@ _MAX31856_FAULT_TCHIGH = const(0x08)
 _MAX31856_FAULT_TCLOW = const(0x04)
 _MAX31856_FAULT_OVUV = const(0x02)
 _MAX31856_FAULT_OPEN = const(0x01)
+
+_AVGSEL_CONSTS = {1: 0x00, 2: 0x10, 4: 0x20, 8: 0x30, 16: 0x40}
 
 
 class ThermocoupleType:  # pylint: disable=too-few-public-methods
@@ -113,6 +116,8 @@ class MAX31856:
     :param ~microcontroller.Pin cs: The pin used for the CS signal.
     :param ~adafruit_max31856.ThermocoupleType thermocouple_type: The type of thermocouple.\
       Default is Type K.
+    :param ~int sampling: Number of samples to be averaged [1,2,4,8,16]
+    :param ~bool filter_50hz: Filter 50Hz mains frequency instead of 60Hz
 
     **Quickstart: Importing and using the MAX31856**
 
@@ -155,12 +160,63 @@ class MAX31856:
         self._write_u8(_MAX31856_CR0_REG, _MAX31856_CR0_OCFAULT0)
 
         # set thermocouple type
+        self._set_thermocouple_type(thermocouple_type)
+
+    def _set_thermocouple_type(self, thermocouple_type: ThermocoupleType):
         # get current value of CR1 Reg
         conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
         conf_reg_1 &= 0xF0  # mask off bottom 4 bits
         # add the new value for the TC type
         conf_reg_1 |= int(thermocouple_type) & 0x0F
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
+
+    @property
+    def averaging(self) -> int:
+        """Number of samples averaged together in each result.
+        Must be 1, 2, 4, 8, or 16. Default is 1 (no averaging).
+        """
+        conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
+        avgsel = conf_reg_1 & ~0b10001111  # clear bits other than 4-6
+        # check which byte this corresponds to
+        for key, value in _AVGSEL_CONSTS.items():
+            if value == avgsel:
+                return key
+        raise KeyError(f"AVGSEL bit pattern was not recognised ({avgsel:>08b})")
+
+    @averaging.setter
+    def averaging(self, num_samples: int):
+        # This option is set in bits 4-6 of register CR1.
+        if num_samples not in _AVGSEL_CONSTS:
+            raise ValueError("Num_samples must be one of 1,2,4,8,16")
+        avgsel = _AVGSEL_CONSTS[num_samples]
+        # get current value of CR1 Reg
+        conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
+        conf_reg_1 &= 0b10001111  # clear bits 4-6
+        # OR the AVGSEL bits (4-6)
+        conf_reg_1 |= avgsel
+        self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
+
+    @property
+    def noise_rejection(self) -> int:
+        """
+        The frequency (Hz) to be used by the noise rejection filter.
+        Must be 50 or 60. Default is 60."""
+        # this value is stored in bit 0 of register CR0.
+        conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
+        if conf_reg_0 & _MAX31856_CR0_50HZ:
+            return 50
+        return 60
+
+    @noise_rejection.setter
+    def noise_rejection(self, frequency: int):
+        conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
+        if frequency == 50:
+            conf_reg_0 |= _MAX31856_CR0_50HZ  # set the 50hz bit
+        elif frequency == 60:
+            conf_reg_0 &= ~_MAX31856_CR0_50HZ  # clear the 50hz bit
+        else:
+            raise ValueError("Frequency must be 50 or 60")
+        self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
 
     @property
     def temperature(self):
@@ -186,7 +242,7 @@ class MAX31856:
 
     @property
     def reference_temperature(self):
-        """Wait to retreive temperature of the cold junction in degrees Celsius. (read-only)"""
+        """Wait to retrieve temperature of the cold junction in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
         return self.unpack_reference_temperature()
 
