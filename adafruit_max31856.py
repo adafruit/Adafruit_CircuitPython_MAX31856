@@ -37,7 +37,7 @@ try:
 except ImportError:
     from ustruct import unpack
 
-__version__ = "0.0.0-auto.0"
+__version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_MAX31856.git"
 
 # Register constants
