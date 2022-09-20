@@ -376,7 +376,7 @@ class MAX31856:
         while self.oneshot_pending:
             sleep(0.01)
 
-    def _read_register(self, address: int, length: int) -> int:
+    def _read_register(self, address: int, length: int) -> bytearray:
         # pylint: disable=no-member
         # Read a 16-bit BE unsigned value from the specified 8-bit address.
         with self._device as device:
