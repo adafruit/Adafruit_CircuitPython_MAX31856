@@ -288,7 +288,7 @@ class MAX31856:
         self._write_u8(_MAX31856_LTLFTL_REG, int_low)
 
     @property
-    def reference_temperature_thresholds(
+    def reference_temperature_thresholds(  # pylint: disable=invalid-name,
         self,
     ) -> Tuple[float, float]:  # pylint: disable=invalid-name
         """The cold junction's low and high temperature thresholds
@@ -300,7 +300,7 @@ class MAX31856:
         )
 
     @reference_temperature_thresholds.setter
-    def reference_temperature_thresholds(
+    def reference_temperature_thresholds(  # pylint: disable=invalid-name,
         self, val: Tuple[float, float]
     ) -> None:  # pylint: disable=invalid-name
 
