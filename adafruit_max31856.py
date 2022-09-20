@@ -34,7 +34,7 @@ from adafruit_bus_device.spi_device import SPIDevice
 
 try:
     from typing import Dict, Tuple
-    from board import SPI
+    from busio import SPI
     from digitalio import DigitalInOut
 except ImportError:
     pass
