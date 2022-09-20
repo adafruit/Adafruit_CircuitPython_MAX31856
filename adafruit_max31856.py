@@ -33,6 +33,14 @@ from micropython import const
 from adafruit_bus_device.spi_device import SPIDevice
 
 try:
+    from typing import Dict, Tuple
+    from typing_extensions import Literal
+    from busio import SPI
+    from digitalio import DigitalInOut
+except ImportError:
+    pass
+
+try:
     from struct import unpack
 except ImportError:
     from ustruct import unpack
@@ -151,7 +159,9 @@ class MAX31856:
     # Tony says this isn't re-entrant or thread safe!
     _BUFFER = bytearray(4)
 
-    def __init__(self, spi, cs, thermocouple_type=ThermocoupleType.K):
+    def __init__(
+        self, spi: SPI, cs: DigitalInOut, thermocouple_type: int = ThermocoupleType.K
+    ) -> None:
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
 
         # assert on any fault
@@ -162,7 +172,7 @@ class MAX31856:
         # set thermocouple type
         self._set_thermocouple_type(thermocouple_type)
 
-    def _set_thermocouple_type(self, thermocouple_type: ThermocoupleType):
+    def _set_thermocouple_type(self, thermocouple_type: ThermocoupleType) -> None:
         # get current value of CR1 Reg
         conf_reg_1 = self._read_register(_MAX31856_CR1_REG, 1)[0]
         conf_reg_1 &= 0xF0  # mask off bottom 4 bits
@@ -184,7 +194,7 @@ class MAX31856:
         raise KeyError(f"AVGSEL bit pattern was not recognised ({avgsel:>08b})")
 
     @averaging.setter
-    def averaging(self, num_samples: int):
+    def averaging(self, num_samples: int) -> None:
         # This option is set in bits 4-6 of register CR1.
         if num_samples not in _AVGSEL_CONSTS:
             raise ValueError("Num_samples must be one of 1,2,4,8,16")
@@ -197,7 +207,7 @@ class MAX31856:
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
 
     @property
-    def noise_rejection(self) -> int:
+    def noise_rejection(self) -> Literal[50, 60]:
         """
         The frequency (Hz) to be used by the noise rejection filter.
         Must be 50 or 60. Default is 60."""
@@ -208,7 +218,7 @@ class MAX31856:
         return 60
 
     @noise_rejection.setter
-    def noise_rejection(self, frequency: int):
+    def noise_rejection(self, frequency: Literal[50, 60]) -> None:
         conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
         if frequency == 50:
             conf_reg_0 |= _MAX31856_CR0_50HZ  # set the 50hz bit
@@ -219,7 +229,7 @@ class MAX31856:
         self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
 
     @property
-    def temperature(self):
+    def temperature(self) -> float:
         """Measure the temperature of the sensor and wait for the result.
         Return value is in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
@@ -241,7 +251,7 @@ class MAX31856:
         return temp_float
 
     @property
-    def reference_temperature(self):
+    def reference_temperature(self) -> float:
         """Wait to retrieve temperature of the cold junction in degrees Celsius. (read-only)"""
         self._perform_one_shot_measurement()
         return self.unpack_reference_temperature()
@@ -256,7 +266,7 @@ class MAX31856:
         return cold_junction_temp
 
     @property
-    def temperature_thresholds(self):
+    def temperature_thresholds(self) -> Tuple[float, float]:
         """The thermocouple's low and high temperature thresholds
         as a ``(low_temp, high_temp)`` tuple
         """
@@ -267,7 +277,7 @@ class MAX31856:
         return (round(raw_low[0] / 16.0, 1), round(raw_high[0] / 16.0, 1))
 
     @temperature_thresholds.setter
-    def temperature_thresholds(self, val):
+    def temperature_thresholds(self, val: Tuple[float, float]) -> None:
 
         int_low = int(val[0] * 16)
         int_high = int(val[1] * 16)
@@ -279,7 +289,9 @@ class MAX31856:
         self._write_u8(_MAX31856_LTLFTL_REG, int_low)
 
     @property
-    def reference_temperature_thresholds(self):  # pylint: disable=invalid-name
+    def reference_temperature_thresholds(  # pylint: disable=invalid-name,
+        self,
+    ) -> Tuple[float, float]:
         """The cold junction's low and high temperature thresholds
         as a ``(low_temp, high_temp)`` tuple
         """
@@ -289,13 +301,15 @@ class MAX31856:
         )
 
     @reference_temperature_thresholds.setter
-    def reference_temperature_thresholds(self, val):  # pylint: disable=invalid-name
+    def reference_temperature_thresholds(  # pylint: disable=invalid-name,
+        self, val: Tuple[float, float]
+    ) -> None:
 
         self._write_u8(_MAX31856_CJLF_REG, int(val[0]))
         self._write_u8(_MAX31856_CJHF_REG, int(val[1]))
 
     @property
-    def fault(self):
+    def fault(self) -> Dict[str, bool]:
         """A dictionary with the status of each fault type where the key is the fault type and the
         value is a bool if the fault is currently active
 
@@ -326,12 +340,12 @@ class MAX31856:
             "open_tc": bool(faults & _MAX31856_FAULT_OPEN),
         }
 
-    def _perform_one_shot_measurement(self):
+    def _perform_one_shot_measurement(self) -> None:
         self.initiate_one_shot_measurement()
         # wait for the measurement to complete
         self._wait_for_oneshot()
 
-    def initiate_one_shot_measurement(self):
+    def initiate_one_shot_measurement(self) -> None:
         """Starts a one-shot measurement and returns immediately.
         A measurement takes approximately 160ms.
         Check the status of the measurement with `oneshot_pending`; when it is false,
@@ -358,11 +372,11 @@ class MAX31856:
         )
         return bool(oneshot_flag)
 
-    def _wait_for_oneshot(self):
+    def _wait_for_oneshot(self) -> None:
         while self.oneshot_pending:
             sleep(0.01)
 
-    def _read_register(self, address, length):
+    def _read_register(self, address: int, length: int) -> bytearray:
         # pylint: disable=no-member
         # Read a 16-bit BE unsigned value from the specified 8-bit address.
         with self._device as device:
@@ -371,7 +385,7 @@ class MAX31856:
             device.readinto(self._BUFFER, end=length)
         return self._BUFFER[:length]
 
-    def _write_u8(self, address, val):
+    def _write_u8(self, address: int, val: int) -> None:
         # Write an 8-bit unsigned value to the specified 8-bit address.
         with self._device as device:
             self._BUFFER[0] = (address | 0x80) & 0xFF
