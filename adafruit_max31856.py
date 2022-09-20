@@ -34,6 +34,7 @@ from adafruit_bus_device.spi_device import SPIDevice
 
 try:
     from typing import Dict, Tuple
+    from typing_extensions import Literal
     from busio import SPI
     from digitalio import DigitalInOut
 except ImportError:
@@ -206,7 +207,7 @@ class MAX31856:
         self._write_u8(_MAX31856_CR1_REG, conf_reg_1)
 
     @property
-    def noise_rejection(self) -> int:
+    def noise_rejection(self) -> Literal[50, 60]:
         """
         The frequency (Hz) to be used by the noise rejection filter.
         Must be 50 or 60. Default is 60."""
@@ -217,7 +218,7 @@ class MAX31856:
         return 60
 
     @noise_rejection.setter
-    def noise_rejection(self, frequency: int) -> None:
+    def noise_rejection(self, frequency: Literal[50, 60]) -> None:
         conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
         if frequency == 50:
             conf_reg_0 |= _MAX31856_CR0_50HZ  # set the 50hz bit
@@ -290,7 +291,7 @@ class MAX31856:
     @property
     def reference_temperature_thresholds(  # pylint: disable=invalid-name,
         self,
-    ) -> Tuple[float, float]:  # pylint: disable=invalid-name
+    ) -> Tuple[float, float]:
         """The cold junction's low and high temperature thresholds
         as a ``(low_temp, high_temp)`` tuple
         """
@@ -302,7 +303,7 @@ class MAX31856:
     @reference_temperature_thresholds.setter
     def reference_temperature_thresholds(  # pylint: disable=invalid-name,
         self, val: Tuple[float, float]
-    ) -> None:  # pylint: disable=invalid-name
+    ) -> None:
 
         self._write_u8(_MAX31856_CJLF_REG, int(val[0]))
         self._write_u8(_MAX31856_CJHF_REG, int(val[1]))
