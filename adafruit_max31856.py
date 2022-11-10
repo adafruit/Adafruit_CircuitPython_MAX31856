@@ -160,7 +160,10 @@ class MAX31856:
     _BUFFER = bytearray(4)
 
     def __init__(
-        self, spi: SPI, cs: DigitalInOut, thermocouple_type: int = ThermocoupleType.K
+        self,
+        spi: SPI,
+        cs: DigitalInOut,  # pylint: disable=invalid-name
+        thermocouple_type: int = ThermocoupleType.K,
     ) -> None:
         self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
 
