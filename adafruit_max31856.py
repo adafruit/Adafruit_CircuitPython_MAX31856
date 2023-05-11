@@ -281,7 +281,6 @@ class MAX31856:
 
     @temperature_thresholds.setter
     def temperature_thresholds(self, val: Tuple[float, float]) -> None:
-
         int_low = int(val[0] * 16)
         int_high = int(val[1] * 16)
 
@@ -307,7 +306,6 @@ class MAX31856:
     def reference_temperature_thresholds(  # pylint: disable=invalid-name,
         self, val: Tuple[float, float]
     ) -> None:
-
         self._write_u8(_MAX31856_CJLF_REG, int(val[0]))
         self._write_u8(_MAX31856_CJHF_REG, int(val[1]))
 
