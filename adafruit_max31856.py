@@ -164,8 +164,9 @@ class MAX31856:
         spi: SPI,
         cs: DigitalInOut,  # pylint: disable=invalid-name
         thermocouple_type: int = ThermocoupleType.K,
+        baudrate: int = 500000,
     ) -> None:
-        self._device = SPIDevice(spi, cs, baudrate=500000, polarity=0, phase=1)
+        self._device = SPIDevice(spi, cs, baudrate=baudrate, polarity=0, phase=1)
 
         # assert on any fault
         self._write_u8(_MAX31856_MASK_REG, 0x0)
@@ -252,6 +253,27 @@ class MAX31856:
         temp_float = raw_temp / 4096.0
 
         return temp_float
+
+    def read_high_res_temp_degC(self) -> float:
+        # Per datasheet, temperature resolution in °C per LSB
+        resolution = 0.0078125
+
+        # Read the temperature registers
+        raw_bytes = self._read_sequential_registers(_MAX31856_LTCBH_REG, 3)
+        # Extract individual bytes from the byte array
+        high_byte = raw_bytes[0]  # First byte
+        mid_byte = raw_bytes[1]  # Second byte
+        low_byte = raw_bytes[2]  # Third byte
+
+        # Combine the bytes into a single 19-bit value
+        combined = (high_byte << 11) | (mid_byte << 3) | (low_byte >> 5)
+
+        # Adjust for two's complement (sign extension for negative values)
+        if combined & 0x40000:  # Check if 19th bit is set (negative temperature)
+            combined = combined - 0x80000
+
+        # Convert to temperature using the resolution
+        return combined * resolution
 
     @property
     def reference_temperature(self) -> float:
@@ -363,6 +385,21 @@ class MAX31856:
         # write it back with the new values, prompting the sensor to perform a measurement
         self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
 
+    def start_autoconverting(self) -> None:  # pylint: disable=no-self-use
+        """Starts autoconverting temperature measurements.
+        The sensor will perform a measurement every ~100ms.
+        """
+        # read the current value of the first config register
+        conf_reg_0 = self._read_register(_MAX31856_CR0_REG, 1)[0]
+
+        # and the complement to guarantee the oneshot bit is unset
+        conf_reg_0 &= ~_MAX31856_CR0_1SHOT
+        # or the autoconvert bit to ensure it is set
+        conf_reg_0 |= _MAX31856_CR0_AUTOCONVERT
+
+        # write it back with the new values, prompting the sensor to perform a measurement
+        self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
+
     @property
     def oneshot_pending(self) -> bool:
         """A boolean indicating the status of the one-shot flag.
@@ -385,6 +422,19 @@ class MAX31856:
             device.write(self._BUFFER, end=1)
             device.readinto(self._BUFFER, end=length)
         return self._BUFFER[:length]
+
+    def _read_sequential_registers(self, start_addr, num_registers=3):
+        """
+        Read a sequence of `num_registers` registers, starting from `start_addr`.
+        """
+        assert num_registers >= 1, "Number of registers to read must be at least 1"
+        buf = bytearray(num_registers)
+        with self._device as device:
+            # Send read command and start address
+            device.write(bytearray([start_addr & 0x7F]))
+            # Read the specified number of registers into the buffer
+            device.readinto(buf)
+        return buf
 
     def _write_u8(self, address: int, val: int) -> None:
         # Write an 8-bit unsigned value to the specified 8-bit address.
