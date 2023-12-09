@@ -253,8 +253,10 @@ class MAX31856:
 
         return temp_float
 
-    def read_high_res_temp_degC(self) -> float:
+    def read_high_res_temp(self) -> float:
         """Reads 19-bit temperature data from the sensor and returns it in degrees Celsius.
+
+        Reading must have already been initiated via `initiate_one_shot_measurement` or `start_autoconverting`.
 
         Returns:
             float: temperature in degrees Celsius
