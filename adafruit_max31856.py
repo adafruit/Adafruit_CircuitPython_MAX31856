@@ -45,7 +45,7 @@ try:
 except ImportError:
     from ustruct import unpack
 
-__version__ = "0.0.0+auto.0"
+__version__ = "0.11.7"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_MAX31856.git"
 
 # Register constants
@@ -124,8 +124,7 @@ class MAX31856:
     :param ~microcontroller.Pin cs: The pin used for the CS signal.
     :param ~adafruit_max31856.ThermocoupleType thermocouple_type: The type of thermocouple.\
       Default is Type K.
-    :param ~int sampling: Number of samples to be averaged [1,2,4,8,16]
-    :param ~bool filter_50hz: Filter 50Hz mains frequency instead of 60Hz
+    :param ~int baudrate: The SPI baudrate. Default is 500000.
 
     **Quickstart: Importing and using the MAX31856**
 
@@ -255,6 +254,11 @@ class MAX31856:
         return temp_float
 
     def read_high_res_temp_degC(self) -> float:
+        """Reads 19-bit temperature data from the sensor and returns it in degrees Celsius.
+
+        Returns:
+            float: temperature in degrees Celsius
+        """
         # Per datasheet, temperature resolution in °C per LSB
         resolution = 0.0078125
 
@@ -423,7 +427,7 @@ class MAX31856:
             device.readinto(self._BUFFER, end=length)
         return self._BUFFER[:length]
 
-    def _read_sequential_registers(self, start_addr, num_registers=3):
+    def _read_sequential_registers(self, start_addr, num_registers=3) -> bytearray:
         """
         Read a sequence of `num_registers` registers, starting from `start_addr`.
         """
