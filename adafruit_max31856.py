@@ -29,14 +29,16 @@ Implementation Notes
 """
 
 from time import sleep
-from micropython import const
+
 from adafruit_bus_device.spi_device import SPIDevice
+from micropython import const
 
 try:
     from typing import Dict, Tuple
-    from typing_extensions import Literal
+
     from busio import SPI
     from digitalio import DigitalInOut
+    from typing_extensions import Literal
 except ImportError:
     pass
 
@@ -88,7 +90,7 @@ _MAX31856_FAULT_OPEN = const(0x01)
 _AVGSEL_CONSTS = {1: 0x00, 2: 0x10, 4: 0x20, 8: 0x30, 16: 0x40}
 
 
-class ThermocoupleType:  # pylint: disable=too-few-public-methods
+class ThermocoupleType:
     """An enum-like class representing the different types of thermocouples that the MAX31856 can
     use. The values can be referenced like ``ThermocoupleType.K`` or ``ThermocoupleType.S``
     Possible values are
@@ -104,7 +106,6 @@ class ThermocoupleType:  # pylint: disable=too-few-public-methods
 
     """
 
-    # pylint: disable=invalid-name
     B = 0b0000
     E = 0b0001
     J = 0b0010
@@ -161,7 +162,7 @@ class MAX31856:
     def __init__(
         self,
         spi: SPI,
-        cs: DigitalInOut,  # pylint: disable=invalid-name
+        cs: DigitalInOut,
         thermocouple_type: int = ThermocoupleType.K,
         baudrate: int = 500000,
     ) -> None:
@@ -241,9 +242,7 @@ class MAX31856:
     def unpack_temperature(self) -> float:
         """Reads the probe temperature from the register"""
         # unpack the 3-byte temperature as 4 bytes
-        raw_temp = unpack(
-            ">i", self._read_register(_MAX31856_LTCBH_REG, 3) + bytes([0])
-        )[0]
+        raw_temp = unpack(">i", self._read_register(_MAX31856_LTCBH_REG, 3) + bytes([0]))[0]
 
         # shift to remove extra byte from unpack needing 4 bytes
         raw_temp >>= 8
@@ -320,7 +319,7 @@ class MAX31856:
         self._write_u8(_MAX31856_LTLFTL_REG, int_low)
 
     @property
-    def reference_temperature_thresholds(  # pylint: disable=invalid-name,
+    def reference_temperature_thresholds(
         self,
     ) -> Tuple[float, float]:
         """The cold junction's low and high temperature thresholds
@@ -332,9 +331,7 @@ class MAX31856:
         )
 
     @reference_temperature_thresholds.setter
-    def reference_temperature_thresholds(  # pylint: disable=invalid-name,
-        self, val: Tuple[float, float]
-    ) -> None:
+    def reference_temperature_thresholds(self, val: Tuple[float, float]) -> None:
         self._write_u8(_MAX31856_CJLF_REG, int(val[0]))
         self._write_u8(_MAX31856_CJHF_REG, int(val[1]))
 
@@ -392,7 +389,7 @@ class MAX31856:
         # write it back with the new values, prompting the sensor to perform a measurement
         self._write_u8(_MAX31856_CR0_REG, conf_reg_0)
 
-    def start_autoconverting(self) -> None:  # pylint: disable=no-self-use
+    def start_autoconverting(self) -> None:
         """Starts autoconverting temperature measurements.
         The sensor will perform a measurement every ~100ms.
         """
@@ -412,9 +409,7 @@ class MAX31856:
         """A boolean indicating the status of the one-shot flag.
         A True value means the measurement is still ongoing.
         A False value means measurement is complete."""
-        oneshot_flag = (
-            self._read_register(_MAX31856_CR0_REG, 1)[0] & _MAX31856_CR0_1SHOT
-        )
+        oneshot_flag = self._read_register(_MAX31856_CR0_REG, 1)[0] & _MAX31856_CR0_1SHOT
         return bool(oneshot_flag)
 
     def _wait_for_oneshot(self) -> None:
@@ -422,7 +417,6 @@ class MAX31856:
             sleep(0.01)
 
     def _read_register(self, address: int, length: int) -> bytearray:
-        # pylint: disable=no-member
         # Read a 16-bit BE unsigned value from the specified 8-bit address.
         with self._device as device:
             self._BUFFER[0] = address & 0x7F
@@ -448,4 +442,4 @@ class MAX31856:
         with self._device as device:
             self._BUFFER[0] = (address | 0x80) & 0xFF
             self._BUFFER[1] = val & 0xFF
-            device.write(self._BUFFER, end=2)  # pylint: disable=no-member
+            device.write(self._BUFFER, end=2)
