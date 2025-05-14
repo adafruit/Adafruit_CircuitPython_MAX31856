@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 import time
+
 import board
 import digitalio
+
 import adafruit_max31856
 
 # Create sensor object, communicating over the board's default SPI bus
@@ -28,30 +30,19 @@ while True:
     current_cj_thresholds = thermocouple.reference_temperature_thresholds
     current_faults = thermocouple.fault
     print(
-        "Temps:    %.2f :: cj: %.2f"
-        % (thermocouple.temperature, thermocouple.reference_temperature)
+        f"Temps:    {thermocouple.temperature:.2f} :: cj: {thermocouple.reference_temperature:.2f}"
     )
     print("Thresholds:")
-    print("Temp low: %.2f high: %.2f" % current_temp_thresholds)
-    print("CJ low:   %.2f high: %.2f" % current_cj_thresholds)
+    print(f"Temp low: {current_temp_thresholds[0]:.2f} high: {current_temp_thresholds[1]:.2f}")
+    print(f"CJ low:   {current_cj_thresholds[0]:.2f} high: {current_cj_thresholds[1]:.2f}")
     print("")
     print("Faults:")
-    print(
-        "Temp Hi:    %s | CJ Hi:    %s"
-        % (current_faults["tc_high"], current_faults["cj_high"])
-    )
-    print(
-        "Temp Low:   %s | CJ Low:   %s"
-        % (current_faults["tc_low"], current_faults["cj_low"])
-    )
-    print(
-        "Temp Range: %s | CJ Range: %s"
-        % (current_faults["tc_range"], current_faults["cj_range"])
-    )
+    print(f"Temp Hi:    {current_faults['tc_high']} | CJ Hi:    {current_faults['cj_high']}")
+    print(f"Temp Low:   {current_faults['tc_low']} | CJ Low:   {current_faults['cj_low']}")
+    print(f"Temp Range: {current_faults['tc_range']} | CJ Range: {current_faults['cj_range']}")
     print("")
     print(
-        "Open Circuit: %s Voltage Over/Under: %s"
-        % (current_faults["open_tc"], current_faults["voltage"])
+        f"Open Circuit: {current_faults['open_tc']} Voltage Over/Under: {current_faults['voltage']}"
     )
     print("")
 
