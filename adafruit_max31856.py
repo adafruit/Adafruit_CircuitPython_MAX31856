@@ -276,7 +276,7 @@ class MAX31856:
 
         # Adjust for two's complement (sign extension for negative values)
         if combined & 0x40000:  # Check if 19th bit is set (negative temperature)
-            combined = combined - 0x80000
+            combined -= 0x80000
 
         # Convert to temperature using the resolution
         return combined * resolution
